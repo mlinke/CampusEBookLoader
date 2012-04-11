@@ -32,6 +32,9 @@ public class Book {
     private String isbn, author, title;
     private ArrayList<String> chapters;
     private ArrayList<String> files;
+    
+    private static final String htmlTitlePattern="<h1[^<]+class=\"title\">(.+?)(?:<br/>\\s*<span class=\"subtitle\">(.+?)</span>\\s*)?</h1>"; 
+    private static final String userAgent="Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2";
 
     public Book(String isbn) {
         this.isbn = isbn;
@@ -76,7 +79,7 @@ public class Book {
         try {
             u = new URL(theURL);
             URLConnection test = u.openConnection();
-            test.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+            test.setRequestProperty("User-Agent", userAgent);
             is = test.getInputStream();
             //is = u.openStream();
 
@@ -110,7 +113,7 @@ public class Book {
 //		</h1>                   <(\"[^\"]*\"|'[^']*'|[^'\">])*>
 
         Pattern searchForTitle =
-        Pattern.compile("<h1[^<]+class=\"title\">(.+?)(?:<br/>\\s*<span class=\"subtitle\">(.+?)</span>\\s*)?</h1>",Pattern.DOTALL | Pattern.UNIX_LINES);
+        Pattern.compile(htmlTitlePattern,Pattern.DOTALL | Pattern.UNIX_LINES);
         Matcher m = searchForTitle.matcher(s);
         m.find();
         output = m.group(1).replaceAll("\u0009","").replaceAll("\\n","");// +" - " + m.group(2); //for subtitle
