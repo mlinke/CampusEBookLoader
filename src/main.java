@@ -24,6 +24,7 @@ public class main {
      */
     public static void main(String[] args) {
         Book myBook = new Book("978-3-8348-0822-6");
-        System.out.println("Titel: "+myBook.getTitle());
+        System.out.println(myBook.getIsbn());
+        System.out.println(myBook.getTitle()+" ("+myBook.getAuthor()+")");
     }
 }
