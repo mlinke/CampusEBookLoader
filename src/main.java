@@ -23,8 +23,13 @@ public class main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        Book myBook = new Book("978-3-8348-0822-6");
-        System.out.println(myBook.getIsbn());
+        //download it
+        Book myBook = new Book("978-3-8348-0822-6"); //test isbn which is open, no need for ciscovpn
+        
+        //test public methods
         System.out.println(myBook.getTitle()+" ("+myBook.getAuthor()+")");
+        System.out.println(myBook.getIsbn());
+        
+        
     }
 }

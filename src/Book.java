@@ -10,6 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /*
+ * A Class for downloading books from SpringerLink by the ISBN
+ * 
  * Copyright (C) 2012 The CampusEBookLoader Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -34,20 +36,22 @@ public class Book {
     private String isbn, author, title;
     private ArrayList<String> chapterUrlList;
     private ArrayList<String> files;
-    
     /**
      * Constants
      */
+    //Patterns needed for matching in html source
     private static final String htmlTitlePattern = "<h1[^<]+class=\"title\">(.+?)(?:<br/>\\s*<span class=\"subtitle\">(.+?)</span>\\s*)?</h1>";
     private static final String htmlChapterLinksPattern = "\"\\shref=\"/content/([^\"]+\\.pdf)\"";
     private static final String htmlAuthorPattern = "\"\\shref=\"/content/\\?Author=.+?\">(.+?)</a>";
+    //Our faked browser
     private static final String userAgent = "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2";
+    //Springerlink
     private static final String baseUrl = "http://springerlink.com/content/";
 
     /**
      * Constructor that sets isbn and initiates everything till a merged pdf
-     * 
-     * @param isbn 
+     *
+     * @param isbn
      */
     public Book(String isbn) {
         this.isbn = isbn;
@@ -69,8 +73,8 @@ public class Book {
     }
 
     /**
-     * Collects the author, title and chapterlinks
-     * + downloads the chapters and saves them as file
+     * Collects the author, title and chapterlinks + downloads the chapters and
+     * saves them as file
      */
     private void collectBookInfo() {
         String pageSource = getPageSource(baseUrl + isbn + "/contents/");
@@ -78,15 +82,12 @@ public class Book {
         chapterUrlList = getChapterLinks(pageSource);
         author = getBookAuthor(pageSource);
         try {
-
-
             int counter = 1;
             for (String chapterUrl : chapterUrlList) {
                 downloadChapter("Chapter" + counter + ".pdf", chapterUrl);
                 System.out.println("downloaded Chapter" + counter);
                 counter++;
             }
-            //for (String chapterUrl: chapterUrls) System.out.println(chapterUrl);
         } catch (MalformedURLException ex) {
             Logger.getLogger(Book.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -96,11 +97,11 @@ public class Book {
 
     /**
      * Downloads a chapter and saves it as a file in /booktitle/filename
-     * 
+     *
      * @param filename the filename to save the downloaded file
      * @param urlString the download link
      * @throws MalformedURLException
-     * @throws IOException 
+     * @throws IOException
      */
     private void downloadChapter(String filename, String urlString) throws MalformedURLException, IOException {
         InputStream in = null;
@@ -187,10 +188,10 @@ public class Book {
 
     /**
      * Returns for a given html source the book author
-     * 
+     *
      * @param pageSource The string that contains the html source
      * @return String
-     */    
+     */
     private String getBookAuthor(String pageSource) {
         String author = "";
 
@@ -207,7 +208,7 @@ public class Book {
 
     /**
      * Returns for a given html source the book title
-     * 
+     *
      * @param pageSource The string that contains the html source
      * @return String
      */
@@ -227,7 +228,7 @@ public class Book {
 
     /**
      * Returns for a given html source the link of each chapter
-     * 
+     *
      * @param pageSource The string that contains the html source
      * @return ArrayList<String>
      */
