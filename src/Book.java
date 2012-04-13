@@ -8,10 +8,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.pdfbox.PDFMerger;
+import org.apache.pdfbox.util.PDFMergerUtility;
+
 
 /*
  * A Class for downloading books from SpringerLink by the ISBN
- * 
+ *
  * Copyright (C) 2012 The CampusEBookLoader Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -35,7 +38,7 @@ public class Book {
      */
     private String isbn, author, title;
     private ArrayList<String> chapterUrlList;
-    private ArrayList<String> files;
+    private ArrayList<BufferedInputStream> chapterStreams = new ArrayList<BufferedInputStream>();
     /**
      * Constants
      */
@@ -56,8 +59,11 @@ public class Book {
     public Book(String isbn) {
         this.isbn = isbn;
         collectBookInfo();
-        //downloadChapter();
-        mergeChapters();
+        try {
+            mergeChapters();
+        } catch (Exception ex) {
+            Logger.getLogger(Book.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     public String getIsbn() {
@@ -104,43 +110,40 @@ public class Book {
      * @throws IOException
      */
     private void downloadChapter(String filename, String urlString) throws MalformedURLException, IOException {
-        InputStream in = null;
+        BufferedInputStream in = null;
         FileOutputStream fout = null;
         URL u;
 
-        try {
-            File dir = new File(title);
-            dir.mkdir();
+        File dir = new File(title);
+        dir.mkdir();
 
-            u = new URL(urlString);
-            URLConnection test = u.openConnection();
+        u = new URL(urlString);
+        URLConnection test = u.openConnection();
 
-            //We need to fake a browser, otherwise Springer blocks us ...
-            test.setRequestProperty("User-Agent", userAgent);
+        //We need to fake a browser, otherwise Springer blocks us ...
+        test.setRequestProperty("User-Agent", userAgent);
 
-            in = test.getInputStream();
-            fout = new FileOutputStream(dir + "/" + filename);
+        in = new BufferedInputStream(test.getInputStream());
+        chapterStreams.add(in);
 
-            byte data[] = new byte[1024];
-            int count;
-            while ((count = in.read(data, 0, 1024)) != -1) {
-                fout.write(data, 0, count);
-            }
-        } finally {
-            if (in != null) {
-                in.close();
-            }
-            if (fout != null) {
-                fout.close();
-            }
-        }
     }
 
     /**
      * Merges each chapter into one file
      */
-    private void mergeChapters() {
-        //TODO
+    private void mergeChapters() throws Exception {
+
+        PDFMergerUtility merger = new PDFMergerUtility();
+
+        for (BufferedInputStream in : chapterStreams) {
+            merger.addSource(in);
+        }
+        merger.setDestinationFileName(title + ".pdf");
+        merger.mergeDocuments(); //Error when not connected to VPN -> files are empty
+
+        for (BufferedInputStream in : chapterStreams) {
+            in.close();
+        }
     }
 
     /**
