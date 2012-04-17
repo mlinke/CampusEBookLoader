@@ -58,6 +58,7 @@ public class Book {
      */
     public Book(String isbn) {
         this.isbn = isbn;
+        setHttpProxy();
         collectBookInfo();
         try {
             mergeChapters();
@@ -78,6 +79,14 @@ public class Book {
         return title;
     }
 
+    /**
+     * Method sets proxy and port to be able to reach campus network on http
+     */
+    private void setHttpProxy(){
+        System.getProperties().put("proxySet", "true");
+        System.getProperties().put("proxyHost", "proxy.tfh-wildau.de");
+        System.getProperties().put("proxyPort", "8080"); 
+    }
     /**
      * Collects the author, title and chapterlinks + downloads the chapters and
      * saves them as file
@@ -113,9 +122,6 @@ public class Book {
         BufferedInputStream in = null;
         FileOutputStream fout = null;
         URL u;
-
-        File dir = new File(title);
-        dir.mkdir();
 
         u = new URL(urlString);
         URLConnection test = u.openConnection();
@@ -160,6 +166,7 @@ public class Book {
         StringBuilder sb = new StringBuilder();
 
         try {
+            
             u = new URL(theURL);
             URLConnection test = u.openConnection();
 
@@ -171,6 +178,7 @@ public class Book {
             dis = new DataInputStream(new BufferedInputStream(is));
             while ((s = dis.readLine()) != null) {
                 sb.append(s + "\n");
+               
             }
         } catch (MalformedURLException mue) {
             System.out.println("Ouch - a MalformedURLException happened.");
