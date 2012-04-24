@@ -24,12 +24,18 @@ public class main {
      */
     public static void main(String[] args) {
         //download it
-        Book myBook = new Book("978-3-8348-0822-6"); //test isbn which is open, no need for ciscovpn
+        //Book myBook = new Book("978-3-8348-0822-6"); //test isbn which is open, no need for ciscovpn
+        
+        //test public methods
+        //System.out.println(myBook.getTitle()+" ("+myBook.getAuthor()+")");
+        //System.out.println(myBook.getIsbn());
+        
+        //download it
+        OldenbourgBook myBook = new OldenbourgBook("978-3-486-27394-6"); //test isbn which is open, no need for ciscovpn
         
         //test public methods
         System.out.println(myBook.getTitle()+" ("+myBook.getAuthor()+")");
         System.out.println(myBook.getIsbn());
-        
         
     }
 }
