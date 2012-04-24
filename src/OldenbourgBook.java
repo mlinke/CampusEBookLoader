@@ -46,7 +46,7 @@ public class OldenbourgBook {
      */
     //Patterns needed for matching in html source
     private static final String htmlTitlePattern = "(<span class=\"author\">\\s*<b>.+?</b>\\s*<br>\\s*(.+?)<br />)";
-    private static final String htmlChapterLinksPattern = "\"\\shref=\"/content/([^\"]+\\.pdf)\"";
+    private static final String htmlChapterLinksPattern = "href=\"/doi/pdfplus/(.+?)\">";
     private static final String htmlAuthorPattern = "(<span class=\"author\">\\s*<b>(.+?)</b>)";
     //Our faked browser
     private static final String userAgent = "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2";
@@ -143,6 +143,8 @@ public class OldenbourgBook {
         //We need to fake a browser, otherwise Springer blocks us ...
         test.setRequestProperty("User-Agent", userAgent);
 
+        //because Oldenbourg needs cookies, we are not able to directly add it to pdfmerger
+        //we must download the chapter in temp folder and delete them after merge completition
         try {
             new File("temp").mkdir();
             in = new BufferedInputStream(test.getInputStream());
@@ -170,6 +172,7 @@ public class OldenbourgBook {
 
         PDFMergerUtility merger = new PDFMergerUtility();
 
+        //get all files in temporary folder
         File folder = new File("temp/");
         File[] listOfFiles = folder.listFiles();
 
@@ -182,13 +185,14 @@ public class OldenbourgBook {
             }
         });
 
+        //add each file to the merger
         for (int i = 0; i < listOfFiles.length; i++) {
             if (listOfFiles[i].isFile()) {
-                //System.out.println(listOfFiles[i].getName());
                 merger.addSource("temp/"+listOfFiles[i].getName());
             }
         }
 
+        //merge
         merger.setDestinationFileName(title + ".pdf");
         merger.mergeDocuments();
 
@@ -297,7 +301,7 @@ public class OldenbourgBook {
         ArrayList<String> returnList = new ArrayList<String>();
 
         Pattern searchForChapterLinks = // href="/doi/pdfplus/10.1524/9783486594089.fm">
-                Pattern.compile("href=\"/doi/pdfplus/(.+?)\">", Pattern.DOTALL | Pattern.UNIX_LINES);
+                Pattern.compile(htmlChapterLinksPattern, Pattern.DOTALL | Pattern.UNIX_LINES);
 
         Matcher matcher = searchForChapterLinks.matcher(pageSource);
 
