@@ -42,7 +42,7 @@ public class OldenbourgBook extends Book {
     private static final String htmlChapterLinksPattern = "href=\"/doi/pdfplus/(.+?)\">";
     private static final String htmlAuthorPattern = "(<span class=\"author\">\\s*<b>(.+?)</b>)";
 
-    //Springerlink
+    //Oldenbourglink
     private static final String baseUrl = "http://www.oldenbourg-link.com/isbn/";
 
     /**
@@ -72,25 +72,25 @@ public class OldenbourgBook extends Book {
         chapterUrlList = getChapterLinks(pageSource);
         
         author = getBookAuthor(pageSource, htmlAuthorPattern);
-//        for (String chapterUrl : chapterUrlList) {
-//            System.out.println(chapterUrl);
-//        }
-//        try {
-//            int counter = 1;
-//            for (String chapterUrl : chapterUrlList) {
-//                if (counter > 9) {
-//                    downloadChapter("Chapter" + counter + ".pdf", chapterUrl);
-//                } else {
-//                    downloadChapter("Chapter0" + counter + ".pdf", chapterUrl);
-//                }
-//                System.out.println("downloaded Chapter" + counter);
-//                counter++;
-//            }
-//        } catch (MalformedURLException ex) {
-//            Logger.getLogger(SpringerBook.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (IOException ex) {
-//            Logger.getLogger(SpringerBook.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        for (String chapterUrl : chapterUrlList) {
+            System.out.println(chapterUrl);
+        }
+        try {
+            int counter = 1;
+            for (String chapterUrl : chapterUrlList) {
+                if (counter > 9) {
+                    downloadChapter("Chapter" + counter + ".pdf", chapterUrl);
+                } else {
+                    downloadChapter("Chapter0" + counter + ".pdf", chapterUrl);
+                }
+                System.out.println("downloaded Chapter" + counter);
+                counter++;
+            }
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(SpringerBook.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(SpringerBook.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**

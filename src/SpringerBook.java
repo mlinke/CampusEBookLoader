@@ -73,18 +73,18 @@ public class SpringerBook extends Book {
         title = getBookTitle(pageSource, htmlTitlePattern );
         chapterUrlList = getChapterLinks(pageSource);
         author = getBookAuthor(pageSource, htmlAuthorPattern);
-//        try {
-//            int counter = 1;
-//            for (String chapterUrl : chapterUrlList) {
-//                downloadChapter("Chapter" + counter + ".pdf", chapterUrl);
-//                System.out.println("downloaded Chapter" + counter);
-//                counter++;
-//            }
-//        } catch (MalformedURLException ex) {
-//            Logger.getLogger(SpringerBook.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (IOException ex) {
-//            Logger.getLogger(SpringerBook.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        try {
+            int counter = 1;
+            for (String chapterUrl : chapterUrlList) {
+                downloadChapter("Chapter" + counter + ".pdf", chapterUrl);
+                System.out.println("downloaded Chapter" + counter);
+                counter++;
+            }
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(SpringerBook.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(SpringerBook.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
