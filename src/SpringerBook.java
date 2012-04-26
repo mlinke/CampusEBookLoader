@@ -4,8 +4,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -32,25 +30,29 @@ import org.apache.pdfbox.util.PDFMergerUtility;
  *
  * @author Marcel Linke @version 0.1
  */
-public class OldenbourgBook extends Book {
+public class SpringerBook extends Book {
 
+    /**
+     * Needed Variables
+     */
+    private ArrayList<BufferedInputStream> chapterStreams = new ArrayList<BufferedInputStream>();
     /**
      * Constants
      */
     //Patterns needed for matching in html source
-    private static final String htmlTitlePattern = "(<span class=\"author\">\\s*<b>.+?</b>\\s*<br>\\s*(.+?)<br />)";
-    private static final String htmlChapterLinksPattern = "href=\"/doi/pdfplus/(.+?)\">";
-    private static final String htmlAuthorPattern = "(<span class=\"author\">\\s*<b>(.+?)</b>)";
-
+    //private static final String htmlTitlePattern = "(<h1[^<]+class=\"title\">(.+?)?:<br/>)";
+    private static final String htmlTitlePattern = "(<dt>Title</dt><dd>(.+?)<br/>)";
+    private static final String htmlChapterLinksPattern = "\"\\shref=\"/content/([^\"]+\\.pdf)\"";
+    private static final String htmlAuthorPattern = "(\"\\shref=\"/content/\\?Author=.+?\">(.+?)</a>)";
     //Springerlink
-    private static final String baseUrl = "http://www.oldenbourg-link.com/isbn/";
+    private static final String baseUrl = "http://springerlink.com/content/";
 
     /**
      * Constructor that sets isbn and initiates everything till a merged pdf
      *
      * @param isbn
      */
-    public OldenbourgBook(String isbn) {
+    public SpringerBook(String isbn) {
         this.isbn = isbn;
         setHttpProxy();
         collectBookInfo();
@@ -60,29 +62,21 @@ public class OldenbourgBook extends Book {
             Logger.getLogger(SpringerBook.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
+    
     /**
      * Collects the author, title and chapterlinks + downloads the chapters and
      * saves them as file
      */
     private void collectBookInfo() {
-        String pageSource = getPageSource(baseUrl + isbn);
+        String pageSource = getPageSource(baseUrl + isbn + "/contents/");
         System.out.println(pageSource);
-        title = getBookTitle(pageSource,htmlTitlePattern );
+        title = getBookTitle(pageSource, htmlTitlePattern );
         chapterUrlList = getChapterLinks(pageSource);
-        
         author = getBookAuthor(pageSource, htmlAuthorPattern);
-//        for (String chapterUrl : chapterUrlList) {
-//            System.out.println(chapterUrl);
-//        }
 //        try {
 //            int counter = 1;
 //            for (String chapterUrl : chapterUrlList) {
-//                if (counter > 9) {
-//                    downloadChapter("Chapter" + counter + ".pdf", chapterUrl);
-//                } else {
-//                    downloadChapter("Chapter0" + counter + ".pdf", chapterUrl);
-//                }
+//                downloadChapter("Chapter" + counter + ".pdf", chapterUrl);
 //                System.out.println("downloaded Chapter" + counter);
 //                counter++;
 //            }
@@ -102,39 +96,14 @@ public class OldenbourgBook extends Book {
      * @throws IOException
      */
     private void downloadChapter(String filename, String urlString) throws MalformedURLException, IOException {
-        BufferedInputStream in = null;
-        FileOutputStream fout = null;
-        URL u;
-
-        u = new URL(urlString);
+        URL u = new URL(urlString);
         URLConnection test = u.openConnection();
-        for (String cookie : cookies) {
-            test.addRequestProperty("Cookie", cookie.split(";", 2)[0]);
-        }
 
         //We need to fake a browser, otherwise Springer blocks us ...
         test.setRequestProperty("User-Agent", userAgent);
 
-        //because Oldenbourg needs cookies, we are not able to directly add it to pdfmerger
-        //we must download the chapter in temp folder and delete them after merge completition
-        try {
-            new File("temp").mkdir();
-            in = new BufferedInputStream(test.getInputStream());
-            fout = new FileOutputStream("temp/" + filename);
-
-            byte data[] = new byte[1024];
-            int count;
-            while ((count = in.read(data, 0, 1024)) != -1) {
-                fout.write(data, 0, count);
-            }
-        } finally {
-            if (in != null) {
-                in.close();
-            }
-            if (fout != null) {
-                fout.close();
-            }
-        }
+        BufferedInputStream in = new BufferedInputStream(test.getInputStream());
+        chapterStreams.add(in);
     }
 
     /**
@@ -144,34 +113,15 @@ public class OldenbourgBook extends Book {
 
         PDFMergerUtility merger = new PDFMergerUtility();
 
-        //get all files in temporary folder
-        File folder = new File("temp/");
-        File[] listOfFiles = folder.listFiles();
-
-        // Sort files by name
-        Arrays.sort(listOfFiles, new Comparator() {
-
-            @Override
-            public int compare(Object f1, Object f2) {
-                return ((File) f1).getName().compareTo(((File) f2).getName());
-            }
-        });
-
-        //add each file to the merger
-        for (int i = 0; i < listOfFiles.length; i++) {
-            if (listOfFiles[i].isFile()) {
-                merger.addSource("temp/"+listOfFiles[i].getName());
-            }
+        for (BufferedInputStream in : chapterStreams) {
+            merger.addSource(in);
         }
-
-        //merge
         merger.setDestinationFileName(title + ".pdf");
-        merger.mergeDocuments();
+        merger.mergeDocuments(); //Error when not connected to VPN -> files are empty
 
-        //if success -> delete folder temp
-        if (!Helper.deleteDir(new File("temp")))//delete folder
-            //folder could not be deleted exception
-            ;
+        for (BufferedInputStream in : chapterStreams) {
+            in.close();
+        }
     }
 
     /**
@@ -181,29 +131,24 @@ public class OldenbourgBook extends Book {
      * @return String
      */
     private String getPageSource(String theURL) {
-        URL u;
-        InputStream is = null;
         DataInputStream dis;
+        InputStream is = null;
         String s;
         StringBuilder sb = new StringBuilder();
 
         try {
-            // Gather all cookies on the first request.
-            URLConnection connection = new URL("http://www.oldenbourg-link.com").openConnection();
-            cookies = connection.getHeaderFields().get("Set-Cookie");
+            
+            URL u = new URL(theURL);
+            URLConnection test = u.openConnection();
 
-            // Then use the same cookies on all subsequent requests.
-            connection = new URL(theURL).openConnection();
-            for (String cookie : cookies) {
-                connection.addRequestProperty("Cookie", cookie.split(";", 2)[0]);
-            }
+            //We need to fake a browser, otherwise Springer blocks us ...
+            test.setRequestProperty("User-Agent", userAgent);
 
-            is = connection.getInputStream();
+            is = test.getInputStream();
 
             dis = new DataInputStream(new BufferedInputStream(is));
             while ((s = dis.readLine()) != null) {
                 sb.append(s).append("\n");
-
             }
         } catch (MalformedURLException mue) {
             System.out.println("Ouch - a MalformedURLException happened.");
@@ -232,13 +177,13 @@ public class OldenbourgBook extends Book {
 
         ArrayList<String> returnList = new ArrayList<String>();
 
-        Pattern searchForChapterLinks = // href="/doi/pdfplus/10.1524/9783486594089.fm">
+        Pattern searchForChapterLinks =
                 Pattern.compile(htmlChapterLinksPattern, Pattern.DOTALL | Pattern.UNIX_LINES);
 
         Matcher matcher = searchForChapterLinks.matcher(pageSource);
 
         while (matcher.find()) {
-            returnList.add("http://www.oldenbourg-link.com/doi/pdfplus/" + matcher.group(1));
+            returnList.add(baseUrl + matcher.group(1));
         }
 
         return returnList;
